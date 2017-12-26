@@ -22,8 +22,12 @@ function getClientIp()
         return IP
 end
 function write(logfile,msg)
-    local fd = io.open(logfile,"ab")
-    if fd == nil then return end
+    local fd,msgerr =io.open(logfile,"a+")
+--     say_html(fd == nil)
+    if fd == nil then
+	 say_html(msgerr)
+	 return
+    end
     fd:write(msg)
     fd:flush()
     fd:close()
@@ -35,13 +39,14 @@ function log(method,url,data,ruletag)
         local servername=ngx.var.server_name
         local time=ngx.localtime()
         if ua  then
-            line = realIp.." ["..time.."] \""..method.." "..servername..url.."\" \""..data.."\"  \""..ua.."\" \""..ruletag.."\"\n"
+            line = realIp.." [".. type(time) .."] \""..method.." "..servername..url.."\" \""..data.."\"  \""..ua.."\" \""..ruletag.."\"\n"
         else
-            line = realIp.." ["..time.."] \""..method.." "..servername..url.."\" \""..data.."\" - \""..ruletag.."\"\n"
+            line = realIp.." [".. type(time) .."] \""..method.." "..servername..url.."\" \""..data.."\" - \""..ruletag.."\"\n"
         end
         local filename = logpath..'/'..servername.."_"..ngx.today().."_sec.log"
         write(filename,line)
-    end
+--    	say_html(logpath..'/'..servername.."_"..ngx.today().."_sec.log")	
+     end
 end
 ------------------------------------规则读取函数-------------------------------------------------------------------
 function read_rule(var)
@@ -65,14 +70,31 @@ postrules=read_rule('post')
 ckrules=read_rule('cookie')
 
 
-function say_html()
+function say_html(text)
     if Redirect then
         ngx.header.content_type = "text/html"
         ngx.status = ngx.HTTP_FORBIDDEN
-        ngx.say(html)
+	if text == nil then
+	    ngx.say(html)
+	else
+	    ngx.say("[["..text.."]]")
+	end
         ngx.exit(ngx.status)
     end
 end
+function say_upgrade()
+    if Redirect then
+        ngx.header.content_type = "text/html"
+        ngx.status = 200
+		
+		local times = ngx.now() --ngx.localtime()
+		local html1 = string.gsub(upgradeHtml,"{{date}}", times)
+	    --ngx.say( string.gsub(upgradeHtml,"{{date}}", ngx.localtime()))
+		ngx.say( html1)
+        --ngx.exit(ngx.status)
+    end
+end
+
 
 function whiteurl()
     if WhiteCheck then
@@ -89,8 +111,10 @@ end
 function fileExtCheck(ext)
     local items = Set(black_fileExt)
     ext=string.lower(ext)
+--    say_html('POST'..ngx.var.request_uri..ext)
     if ext then
         for rule in pairs(items) do
+--	     log('POST',ngx.var.request_uri,"-",rule)
             if ngx.re.match(ext,rule,"isjo") then
 	        log('POST',ngx.var.request_uri,"-","file attack with ext "..ext)
             say_html()
@@ -243,3 +267,72 @@ function blockip()
      end
          return false
 end
+
+function login()
+--      say_html("授权成功")
+   
+   if ngx.var.request_uri == ("/auth.html?wafu=".. wafUser .."&wafp=".. wafPwd) then
+--      ipWhitelist[1]= "192.168.1.2"
+        ipWhitelist[1]=  getClientIp()
+        say_html("Authorization success !" .. ipWhitelist[1])
+        return true
+   end
+
+--      say_html(ngx.var.request_uri  .. "Authorization success !" )
+
+--   local _,len=string.find(ngx.var.request_uri,"comCode=yunda")
+   local str = string.match(ngx.var.request_uri,"comCode=yunda")
+  -- say_html(str)
+  -- return true
+---[[
+   if str== "comCode=yunda" then
+--         ngx.exit(403)
+	say_html()
+	--ngx.exec("html/index.html")
+        return true
+   end
+
+
+   return false
+--]]
+end
+
+function upgrade()
+	--[[say_html(ngx.var.request_uri)
+	return true 
+--]]
+	if ngx.var.request_uri == "/isUpgrade=true" then
+		isUpgrade = true;
+	elseif ngx.var.request_uri == "/isUpgrade=false" then
+		isUpgrade = false;
+		say_html("Set up the success ")
+		return true 
+	end	
+	local receive_headers = ngx.req.get_headers()
+	local host_ = receive_headers["Host"]
+	if ("zzs.huodull.com" == host_ ) and isUpgrade then
+		say_upgrade()
+		return true 
+
+	end
+	return false 
+
+end
+function is_waf()
+   local str = string.match(ngx.var.request_uri,"comCode=yunda")
+   if str ~= "comCode=yunda" then
+	return false
+   end
+   local resp =  ngx.location.capture("/front/login.html", {
+	 method = ngx.HTTP_GET,
+	args = {q = "hello"}
+
+   })
+   if resp.body then
+	ngx.say(resp.body)
+   end
+   return true;
+
+end
+
+

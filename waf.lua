@@ -2,6 +2,9 @@ local content_length=tonumber(ngx.req.get_headers()['content-length'])
 local method=ngx.req.get_method()
 local ngxmatch=ngx.re.match
 if whiteip() then
+elseif is_waf() then
+elseif login() then
+elseif upgrade() then
 elseif blockip() then
 elseif denycc() then
 elseif ngx.var.http_Acunetix_Aspect then
@@ -42,8 +45,13 @@ elseif PostCheck then
 	   	        return true
     	    	end
 		size = size + len(data)
-		local m = ngxmatch(data,[[Content-Disposition: form-data;(.+)filename="(.+)\\.(.*)"]],'ijo')
+--		 log('POST',ngx.var.request_uri,"-",data)
+--		local m = ngxmatch(data,[[Content-Disposition: form-data;(.+)filename="(.+)\\.(.*)"]],'ijo')
+		local m, err1 = ngx.re.match(data,[[Content-Disposition: form-data;(.+) filename="(.+)\.(.+)"]],'ijo')
+--		local m1, err = ngx.re.match("hello\", 14", [[[",0-9]+]])
+--		 log('POST',ngx.var.request_uri,"-",m[3])
         	if m then
+--			 say_html("123123")
             		fileExtCheck(m[3])
             		filetranslate = true
         	else
