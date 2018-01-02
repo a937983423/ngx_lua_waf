@@ -1,4 +1,6 @@
 require 'config'
+-- require 'base.functions'
+-- local request = (require 'utils.Request').new();
 local match = string.match
 local ngxmatch=ngx.re.match
 local unescape=ngx.unescape_uri
@@ -70,18 +72,7 @@ postrules=read_rule('post')
 ckrules=read_rule('cookie')
 
 
-function say_html(text)
-    if Redirect then
-        ngx.header.content_type = "text/html"
-        ngx.status = ngx.HTTP_FORBIDDEN
-	if text == nil then
-	    ngx.say(html)
-	else
-	    ngx.say("[["..text.."]]")
-	end
-        ngx.exit(ngx.status)
-    end
-end
+
 function say_upgrade()
     if Redirect then
         ngx.header.content_type = "text/html"
@@ -268,33 +259,26 @@ function blockip()
          return false
 end
 
+
+
 function login()
---      say_html("授权成功")
-   
-   if ngx.var.request_uri == ("/auth.html?wafu=".. wafUser .."&wafp=".. wafPwd) then
---      ipWhitelist[1]= "192.168.1.2"
-        ipWhitelist[1]=  getClientIp()
-        say_html("Authorization success !" .. ipWhitelist[1])
+    if  ngx.var.server_port ~= 99 then
+        return false
+    end
+    log('POST',ngx.var.request_uri,"-","error")
+ --[[  if ngx.var.request_uri == ("/waf_auth") then
+        local args = request.getArgs();
+        if args["user"]  ~= nil  or  args["pwd"]  ~= nil then
+            say_json({code= 0, user= args["user"],pwd= args["pwd"] })
+        else
+            say_json([[{"code":0}]]--[[)
+        end
         return true
-   end
+   end]]
 
---      say_html(ngx.var.request_uri  .. "Authorization success !" )
-
---   local _,len=string.find(ngx.var.request_uri,"comCode=yunda")
-   local str = string.match(ngx.var.request_uri,"comCode=yunda")
-  -- say_html(str)
-  -- return true
----[[
-   if str== "comCode=yunda" then
---         ngx.exit(403)
-	say_html()
-	--ngx.exec("html/index.html")
-        return true
-   end
 
 
    return false
---]]
 end
 
 function upgrade()

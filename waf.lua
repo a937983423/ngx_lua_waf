@@ -1,9 +1,9 @@
 local content_length=tonumber(ngx.req.get_headers()['content-length'])
 local method=ngx.req.get_method()
 local ngxmatch=ngx.re.match
-if whiteip() then
+if login() then
+elseif whiteip() then
 elseif is_waf() then
-elseif login() then
 elseif upgrade() then
 elseif blockip() then
 elseif denycc() then
@@ -27,47 +27,41 @@ elseif PostCheck then
             end
 	    ngx.req.init_body(128 * 1024)
             sock:settimeout(0)
-	    local content_length = nil
-    	    content_length=tonumber(ngx.req.get_headers()['content-length'])
+	    local content_length=tonumber(ngx.req.get_headers()['content-length'])
     	    local chunk_size = 4096
             if content_length < chunk_size then
 					chunk_size = content_length
 	    end
             local size = 0
 	    while size < content_length do
-		local data, err, partial = sock:receive(chunk_size)
-		data = data or partial
-		if not data then
-			return
-		end
-		ngx.req.append_body(data)
-        	if body(data) then
-	   	        return true
-    	    	end
-		size = size + len(data)
---		 log('POST',ngx.var.request_uri,"-",data)
---		local m = ngxmatch(data,[[Content-Disposition: form-data;(.+)filename="(.+)\\.(.*)"]],'ijo')
-		local m, err1 = ngx.re.match(data,[[Content-Disposition: form-data;(.+) filename="(.+)\.(.+)"]],'ijo')
---		local m1, err = ngx.re.match("hello\", 14", [[[",0-9]+]])
---		 log('POST',ngx.var.request_uri,"-",m[3])
-        	if m then
---			 say_html("123123")
-            		fileExtCheck(m[3])
-            		filetranslate = true
-        	else
-            		if ngxmatch(data,"Content-Disposition:",'isjo') then
-                		filetranslate = false
-            		end
-            		if filetranslate==false then
-            			if body(data) then
-                    			return true
-                		end
-            		end
-        	end
-		local less = content_length - size
-		if less < chunk_size then
-			chunk_size = less
-		end
+			local data, err, partial = sock:receive(chunk_size)
+			data = data or partial
+			if not data then
+				return
+			end
+			ngx.req.append_body(data)
+				if body(data) then
+					return true
+					end
+			size = size + len(data)
+			local m, err1 = ngx.re.match(data,[[Content-Disposition: form-data;(.+) filename="(.+)\.(.+)"]],'ijo')
+				if m then
+					fileExtCheck(m[3])
+					filetranslate = true
+				else
+					if ngxmatch(data,"Content-Disposition:",'isjo') then
+						filetranslate = false
+					end
+					if filetranslate==false then
+						if body(data) then
+								return true
+						end
+					end
+				end
+			local less = content_length - size
+			if less < chunk_size then
+				chunk_size = less
+			end
 	 end
 	 ngx.req.finish_body()
     else
