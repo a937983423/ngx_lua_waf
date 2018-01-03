@@ -723,30 +723,7 @@ function write(logfile,msg)
     fd:close()
 end
 
-function getClientIp()
-    IP  = ngx.var.remote_addr
-    if IP == nil then
-        IP  = "unknown"
-    end
-    return IP
-end
 
-function log(method,url,data,ruletag)
-    if attacklog then
-        local realIp = getClientIp()
-        local ua = ngx.var.http_user_agent
-        local servername=ngx.var.server_name
-        local time=ngx.localtime()
-        if ua  then
-            line = realIp.." [".. type(time) .."] \""..method.." "..servername..url.."\" \""..data.."\"  \""..ua.."\" \""..ruletag.."\"\n"
-        else
-            line = realIp.." [".. type(time) .."] \""..method.." "..servername..url.."\" \""..data.."\" - \""..ruletag.."\"\n"
-        end
-        local filename = logpath..'/'..servername.."_"..ngx.today().."_sec.log"
-        write(filename,line)
-        --    	say_html(logpath..'/'..servername.."_"..ngx.today().."_sec.log")
-    end
-end
 
 
 
@@ -1726,38 +1703,4 @@ function string.formatnumberthousands(num)
         if k == 0 then break end
     end
     return formatted
-end
-function say_html(text)
-    if Redirect then
-        ngx.header.content_type = "text/html"
-        ngx.status = ngx.HTTP_FORBIDDEN
-        if text == nil then
-            ngx.say(html)
-        else
-            ngx.say("[["..text.."]]")
-        end
-        ngx.exit(ngx.status)
-    end
-end
-
-
---------------------------------
--- 输出json响应给客户端
--- @function say_json
--- @param String text  数值
-local json = require("utils.json")
-function say_json(text)
-    if Redirect then
-        ngx.header.content_type = "application/json;charset=UTF-8"
-        ngx.status = ngx.HTTP_OK
-        if nil ~= text  then
-            local obj = type(text);
-            if t == "table" or t == "userdata" then
-                ngx.say(json.encode(text))
-            else
-                ngx.say(text)
-            end
-        end
-        ngx.exit(ngx.status)
-    end
 end
