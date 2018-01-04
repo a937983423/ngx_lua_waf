@@ -1,6 +1,7 @@
 require 'config'
 require 'base.functions'
 local request = (require 'utils.Request').new();
+local Cookies = require 'utils.Cookies';
 local match = string.match
 local ngxmatch=ngx.re.match
 local unescape=ngx.unescape_uri
@@ -16,6 +17,44 @@ PathInfoFix = optionIsOn(PathInfoFix)
 attacklog = optionIsOn(attacklog)
 CCDeny = optionIsOn(CCDeny)
 Redirect=optionIsOn(Redirect)
+
+
+function getClientIp()
+        IP  = ngx.var.remote_addr
+        if IP == nil then
+                IP  = "unknown"
+        end
+        return IP
+end
+
+function log(method,url,data,ruletag)
+    if attacklog then
+        local realIp = getClientIp()
+        local ua = ngx.var.http_user_agent
+        local servername=ngx.var.server_name
+        local time=ngx.localtime()
+        if ua  then
+            line = realIp.." [".. type(time) .."] \""..method.." "..servername..url.."\" \""..data.."\"  \""..ua.."\" \""..ruletag.."\"\n"
+        else
+            line = realIp.." [".. type(time) .."] \""..method.." "..servername..url.."\" \""..data.."\" - \""..ruletag.."\"\n"
+        end
+        local filename = logpath..'/'..servername.."_"..ngx.today().."_sec.log"
+        write(filename,line)
+--    	say_html(logpath..'/'..servername.."_"..ngx.today().."_sec.log")
+     end
+end
+------------------------------------规则读取函数-------------------------------------------------------------------
+
+
+urlrules=read_rule('url')
+argsrules=read_rule('args')
+uarules=read_rule('user-agent')
+wturlrules=read_rule('whiteurl')
+postrules=read_rule('post')
+ckrules=read_rule('cookie')
+users=read_rule('user')
+
+
 function say_html(text)
     if Redirect then
         ngx.header.content_type = "text/html"
@@ -45,7 +84,7 @@ function say_json(text)
                 log('POST',ngx.var.request_uri,"-",  json.encode(text))
                 ngx.print(json.encode(text))
             else
-                log('POST',ngx.var.request_uri,"-",  obj)
+                log('POST',ngx.var.request_uri,"-",  t)
                 ngx.print(text)
             end
         end
@@ -53,65 +92,6 @@ function say_json(text)
     end
 end
 
-function getClientIp()
-        IP  = ngx.var.remote_addr
-        if IP == nil then
-                IP  = "unknown"
-        end
-        return IP
-end
-
-function log(method,url,data,ruletag)
-    if attacklog then
-        local realIp = getClientIp()
-        local ua = ngx.var.http_user_agent
-        local servername=ngx.var.server_name
-        local time=ngx.localtime()
-        if ua  then
-            line = realIp.." [".. type(time) .."] \""..method.." "..servername..url.."\" \""..data.."\"  \""..ua.."\" \""..ruletag.."\"\n"
-        else
-            line = realIp.." [".. type(time) .."] \""..method.." "..servername..url.."\" \""..data.."\" - \""..ruletag.."\"\n"
-        end
-        local filename = logpath..'/'..servername.."_"..ngx.today().."_sec.log"
-        write(filename,line)
---    	say_html(logpath..'/'..servername.."_"..ngx.today().."_sec.log")
-     end
-end
-------------------------------------规则读取函数-------------------------------------------------------------------
-function read_rule(var)
-    file = io.open(rulepath..'/'..var,"r")
-    if file==nil then
-        return
-    end
-    t = {}
-    for line in file:lines() do
-        table.insert(t,line)
-    end
-    file:close()
-    return(t)
-end
-
-urlrules=read_rule('url')
-argsrules=read_rule('args')
-uarules=read_rule('user-agent')
-wturlrules=read_rule('whiteurl')
-postrules=read_rule('post')
-ckrules=read_rule('cookie')
-users=read_rule('user')
-
-
-function say_html(text)
-    if Redirect then
-        ngx.header.content_type = "text/html"
-        ngx.status = ngx.HTTP_FORBIDDEN
-        if text == nil then
-            ngx.say(html)
-        else
-            ngx.say("[["..text.."]]")
-        end
-        ngx.exit(ngx.status)
-    end
-end
 function say_upgrade()
     if Redirect then
         ngx.header.content_type = "text/html"
@@ -151,11 +131,7 @@ function fileExtCheck(ext)
     end
     return false
 end
-function Set (list)
-    local set = {}
-    for _, l in ipairs(list) do set[l] = true end
-    return set
-end
+
 function args()
     for _,rule in pairs(argsrules) do
         local args = ngx.req.get_uri_args()
@@ -297,49 +273,51 @@ function blockip()
 end
 
 function login()
-    local str = string.match(ngx.var.request_uri,"/waf_auth")
+    local str = string.match(ngx.var.request_uri, "/waf_auth")
+    if str == ("/waf_auth") then
+        local args = request.getArgs();
 
-  if str == ("/waf_auth") then
-       local args = request.getArgs();
+        if args["user"] ~= nil or args["pwd"] ~= nil then
+            local acc = args["user"] .. "|" .. args["pwd"]
+            for _, u in pairs(users) do
+                if acc == u then
+                    local cookie = Cookies.new("session", acc)
+                    cookie:setValue(acc)
+                    cookie:setExpiresTime(ngx.time() + 60 * 30)
+--                    log("")
+                    cookie:write()
+                     cookie = Cookies.new("user", acc)
+                    cookie:setValue(acc)
+                    cookie:setExpiresTime(ngx.time() + 60 * 30)
+                    cookie:write()
+                    say_json({ code = 0, user = args["user"], pwd = args["pwd"], get=cookie:getCookies(), cookie=cookie:getCookies(),head=ngx.header['Set-Cookie']})
+                    return true
+                end
+            end
 
-       if args["user"]  ~= nil  or  args["pwd"]  ~= nil then
-           for _,ip in pairs(ipBlocklist) do
-               if getClientIp()==ip then
-
-                   return true
-               end
-           end
-           say_json({code= 0, user= args["user"],pwd= args["pwd"] })
-       else
-           say_json([[{"code":0}]])
-       end
-       return true
-  end
+        end
+--        say_json(ngx.var["cookie_session"])
+        say_json(ngx.var.http_cookie)
+--        say_json({ code = -1, message="账号或密码是否正确"})
+        return true
+    end
 
 
-    if ngx.var.request_uri == ("/auth.html?wafu=".. wafUser .."&wafp=".. wafPwd) then
+    if ngx.var.request_uri == ("/auth.html?wafu=" .. wafUser .. "&wafp=" .. wafPwd) then
         --      ipWhitelist[1]= "192.168.1.2"
-        ipWhitelist[1]=  getClientIp()
+        ipWhitelist[1] = getClientIp()
         say_html("Authorization success !" .. ipWhitelist[1])
         return true
     end
 
-    --      say_html(ngx.var.request_uri  .. "Authorization success !" )
 
-    --   local _,len=string.find(ngx.var.request_uri,"comCode=yunda")
-    local str = string.match(ngx.var.request_uri,"comCode=yunda")
-    -- say_html(str)
-    -- return true
-    ---[[
-    if str== "comCode=yunda" then
-        --         ngx.exit(403)
+    local str = string.match(ngx.var.request_uri, "comCode=yunda")
+
+    if str == "comCode=yunda" then
         say_html()
         return true
     end
-
-
     return false
-    --]]
 end
 
 function upgrade()

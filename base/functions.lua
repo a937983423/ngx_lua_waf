@@ -1704,3 +1704,23 @@ function string.formatnumberthousands(num)
     end
     return formatted
 end
+
+
+function read_rule(var)
+    file = io.open(rulepath..'/'..var,"r")
+    if file==nil then
+        return
+    end
+    t = {}
+    for line in file:lines() do
+        table.insert(t,line)
+    end
+    file:close()
+    return(t)
+end
+
+function Set (list)
+    local set = {}
+    for _, l in ipairs(list) do set[l] = true end
+    return set
+end
