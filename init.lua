@@ -162,6 +162,7 @@ end
 function url()
     if UrlDeny then
         for _,rule in pairs(urlrules) do
+            log('GET',ngx.var.request_uri,"-",rule)
             if rule ~="" and ngxmatch(ngx.var.request_uri,rule,"isjo") then
                 log('GET',ngx.var.request_uri,"-",rule)
                 say_html()
@@ -272,34 +273,31 @@ function blockip()
     return false
 end
 
+
+
 function login()
     local str = string.match(ngx.var.request_uri, "/waf_auth")
     if str == ("/waf_auth") then
-        local args = request.getArgs();
-
-        if args["user"] ~= nil or args["pwd"] ~= nil then
-            local acc = args["user"] .. "|" .. args["pwd"]
-            for _, u in pairs(users) do
-                if acc == u then
-                    local cookie = Cookies.new("session", acc)
-                    cookie:setValue(acc)
-                    cookie:setExpiresTime(ngx.time() + 60 * 30)
---                    log("")
-                    cookie:write()
-                     cookie = Cookies.new("user", acc)
-                    cookie:setValue(acc)
-                    cookie:setExpiresTime(ngx.time() + 60 * 30)
-                    cookie:write()
-                    say_json({ code = 0, user = args["user"], pwd = args["pwd"], get=cookie:getCookies(), cookie=cookie:getCookies(),head=ngx.header['Set-Cookie']})
-                    return true
-                end
-            end
-
+        local cookie = Cookies.new("session")
+        if not string.isEmpty(cookie:read()) and table.indexof(users, cookie:read()) then
+            return false
         end
---        say_json(ngx.var["cookie_session"])
-        say_json(ngx.var.http_cookie)
---        say_json({ code = -1, message="账号或密码是否正确"})
-        return true
+
+        local args = request.getArgs();
+        if  string.isEmpty(args["user"]) or string.isEmpty(args["pwd"])  then
+            say_json({ code = -1, message="账号或密码是否正确"})
+
+            return true
+        end
+
+        local acc = args["user"] .. "|" .. args["pwd"]
+        if table.indexof(users, acc) then
+            cookie:setValue(acc)
+            cookie:setExpiresTime(ngx.time() + 60 * 30)
+            cookie:write()
+            say_json({ code = 0, user = args["user"], pwd = args["pwd"]})
+            return true
+        end
     end
 
 

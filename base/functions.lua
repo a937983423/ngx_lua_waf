@@ -1706,6 +1706,17 @@ function string.formatnumberthousands(num)
 end
 
 
+--------------------------------
+-- 判断字符串是否为nil 或者空串
+-- @function [parent=#string] isEmpty
+-- @param string str 数值
+-- @return boolean#boolean  校验结果
+
+function string.isEmpty(str)
+    return str == nil or "" == str;
+
+end
+
 function read_rule(var)
     file = io.open(rulepath..'/'..var,"r")
     if file==nil then
@@ -1724,3 +1735,5 @@ function Set (list)
     for _, l in ipairs(list) do set[l] = true end
     return set
 end
+
+

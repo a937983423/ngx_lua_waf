@@ -136,8 +136,12 @@ end
 -- 读取当前cookie
 -- @function read
 function Cookies:read()
+    local cookie = ngx.var["cookie_".. self.key]
+    if not string.isEmpty(cookie)  then
+        return string.urldecode(cookie)
+    end
 
-   return ngx.var["cookie_".. self.key]
+   return cookie
 end
 
 ----------------------
