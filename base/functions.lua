@@ -1736,4 +1736,19 @@ function Set (list)
     return set
 end
 
+function success(key, content)
+    local data = {}
+    data["code"]=0
+    data["key"]=content
+
+    say_json(data)
+end
+
+function error(code, message)
+    local data = {}
+    data["code"]=code
+    data["message"]=message
+
+    say_json(data)
+end
 

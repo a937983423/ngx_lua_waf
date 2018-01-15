@@ -1,7 +1,7 @@
 require 'config'
 require 'base.functions'
-local request = (require 'utils.Request').new();
-local Cookies = require 'utils.Cookies';
+local actions = (require 'controller.action').new();
+
 local match = string.match
 local ngxmatch=ngx.re.match
 local unescape=ngx.unescape_uri
@@ -75,6 +75,7 @@ end
 -- @param String text  数值
 local json = require("utils.json")
 function say_json(text)
+
     if Redirect then
         ngx.header.content_type = "application/json;charset=UTF-8"
         ngx.status = ngx.HTTP_OK
@@ -82,10 +83,10 @@ function say_json(text)
             local t = type(text);
             if t == "table" or t == "userdata" then
                 log('POST',ngx.var.request_uri,"-",  json.encode(text))
-                ngx.print(json.encode(text))
+                ngx.say(json.encode(text))
             else
                 log('POST',ngx.var.request_uri,"-",  t)
-                ngx.print(text)
+                ngx.say(text)
             end
         end
         ngx.exit(ngx.status)
@@ -162,8 +163,8 @@ end
 function url()
     if UrlDeny then
         for _,rule in pairs(urlrules) do
-            log('GET',ngx.var.request_uri,"-",rule)
-            if rule ~="" and ngxmatch(ngx.var.request_uri,rule,"isjo") then
+            local flag, err = ngxmatch(ngx.var.request_uri,rule,"isjo");
+            if rule ~="" and flag then
                 log('GET',ngx.var.request_uri,"-",rule)
                 say_html()
                 return true
@@ -275,48 +276,6 @@ end
 
 
 
-function login()
-    local str = string.match(ngx.var.request_uri, "/waf_auth")
-    if str == ("/waf_auth") then
-        local cookie = Cookies.new("session")
-        if not string.isEmpty(cookie:read()) and table.indexof(users, cookie:read()) then
-            return false
-        end
-
-        local args = request.getArgs();
-        if  string.isEmpty(args["user"]) or string.isEmpty(args["pwd"])  then
-            say_json({ code = -1, message="账号或密码是否正确"})
-
-            return true
-        end
-
-        local acc = args["user"] .. "|" .. args["pwd"]
-        if table.indexof(users, acc) then
-            cookie:setValue(acc)
-            cookie:setExpiresTime(ngx.time() + 60 * 30)
-            cookie:write()
-            say_json({ code = 0, user = args["user"], pwd = args["pwd"]})
-            return true
-        end
-    end
-
-
-    if ngx.var.request_uri == ("/auth.html?wafu=" .. wafUser .. "&wafp=" .. wafPwd) then
-        --      ipWhitelist[1]= "192.168.1.2"
-        ipWhitelist[1] = getClientIp()
-        say_html("Authorization success !" .. ipWhitelist[1])
-        return true
-    end
-
-
-    local str = string.match(ngx.var.request_uri, "comCode=yunda")
-
-    if str == "comCode=yunda" then
-        say_html()
-        return true
-    end
-    return false
-end
 
 function upgrade()
     --[[say_html(ngx.var.request_uri)
@@ -337,6 +296,63 @@ function upgrade()
 
     end
     return false
+
+end
+---
+-- @function: 打印table的内容，递归
+-- @param: tbl 要打印的table
+-- @param: level 递归的层数，默认不用传值进来
+-- @param: filteDefault 是否过滤打印构造函数，默认为是
+-- @return: return
+function PrintTable( tbl , level, filteDefault)
+    local msg = ""
+    filteDefault = filteDefault or true --默认过滤关键字（DeleteMe, _class_type）
+    level = level or 1
+    local indent_str = ""
+    for i = 1, level do
+        indent_str = indent_str.."  "
+    end
+    log(' ',"","-",indent_str .. "{")
+    for k,v in pairs(tbl) do
+        if filteDefault then
+            if k ~= "_class_type" and k ~= "DeleteMe" then
+                local item_str = string.format("%s%s = %s", indent_str .. " ",tostring(k), tostring(v))
+                log(' ',"","-",item_str)
+                if type(v) == "table" then
+                    PrintTable(v, level + 1)
+                end
+            end
+        else
+            local item_str = string.format("%s%s = %s", indent_str .. " ",tostring(k), tostring(v))
+            log(' ',"","-",item_str)
+            if type(v) == "table" then
+                PrintTable(v, level + 1)
+            end
+        end
+    end
+    log(' ',"","-",indent_str .. "}")
+end
+function waf()
+    local action = string.sub(ngx.var.document_uri, 2)
+    if actions[action] and actions[action]() then
+        return true
+    end
+    return false
+  --[[  local index = string.find(ngx.var.request_uri, "?")
+    local actionStr
+    if nil == index then
+        actionStr = ngx.var.request_uri;
+    else
+        actionStr =  string.sub(ngx.var.request_uri, 0, index);
+    end
+
+
+    local action = actions[actionStr]
+    if not action then
+        return false
+    end
+
+    return action();]]
 
 end
 

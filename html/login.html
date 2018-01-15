@@ -8,7 +8,25 @@
     <form action="waf_auth" method="post">
     用户名:<input name="user"><br>
     密码:<input name="pwd"><br>
-        <input type="button" value="登录">
+        <input type="submit" value="登录">
     </form>
 </body>
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/JQForm.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('form').form({
+            success:function (data) {
+                if (data.code == 0){
+                    alert("登录成功")
+                    location.href="/"
+                    return false;
+                }
+                alert(data.message)
+            }
+
+        })
+    })
+
+</script>
 </html>

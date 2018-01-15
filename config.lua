@@ -1,3 +1,4 @@
+NginxPath = "/usr/local/nginx/sbin/"
 RulePath = "/usr/local/nginx/conf/waf/wafconf/"
 attacklog = "on"
 logdir = "/usr/local/nginx/logs/hack"
