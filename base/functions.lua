@@ -693,7 +693,6 @@ end
 
 此外，还可以在 "写入模式" 参数最后追加字符 "b" ，表示以二进制方式写入数据，这样可以避免内容写入不完整。
 
-**Android 特别提示:** 在 Android 平台上，文件只能写入存储卡所在路径，assets 和 data 等目录都是无法写入的。
 
 ]]
 
@@ -704,7 +703,8 @@ function io.writefile(path, content, mode)
     local file = io.open(path, mode)
     if file then
         if file:write(content) == nil then return false end
-        io.close(file)
+        file:flush()
+        file:close()
         return true
     else
         return false
@@ -715,12 +715,12 @@ function write(logfile,msg)
     local fd,msgerr =io.open(logfile,"a+")
     --     say_html(fd == nil)
     if fd == nil then
-        say_html(msgerr)
-        return
+        return false
     end
     fd:write(msg)
     fd:flush()
     fd:close()
+    return true
 end
 
 
@@ -1716,7 +1716,10 @@ function string.isEmpty(str)
     return str == nil or "" == str;
 
 end
-
+-----------------------
+-- @function read_rule 读取规则放置table中
+-- @param string var 规则名称(文件名)
+-- @return string#t  规则集
 function read_rule(var)
     file = io.open(rulepath..'/'..var,"r")
     if file==nil then
@@ -1736,6 +1739,11 @@ function Set (list)
     return set
 end
 
+------------------------------------------
+-- @function success 输出成功消息
+-- @param number key 内容消息的key
+-- @param number content 内容消息
+
 function success(key, content)
     local data = {}
     data["code"]=0
@@ -1744,11 +1752,52 @@ function success(key, content)
     say_json(data)
 end
 
+------------------------------------------
+-- @function success 输出失败消息
+-- @param number code 状态码
+-- @param number message 内容消息
 function error(code, message)
     local data = {}
     data["code"]=code
     data["message"]=message
 
     say_json(data)
+end
+
+------------------------------------
+-- 保存事件
+-- @function  [parent=#io] save 根据配置文件名称进行内容保存
+-- @param string var 配置文件名
+-- @param string content 需要保存的数据
+-- @param number id 数据对应的行号
+function io.save(var, content, id)
+    if string.isEmpty(id) then
+        return write(file, "\r\n" .. content)
+    end
+    if type(id) == "number" then
+        if os.execute("sed -i '" .. id .. "a\\" .. content .. "' " .. getConfFile(var)) ~= 0 then
+            os.execute("sed -i '" .. id .. "d' " .. getConfFile(var));
+            success("message", "保存成功")
+        end
+        error(-1, "保存失败")
+    end
+    return true
+end
+
+------------------------------------
+-- 保存事件
+-- @function  [parent=#io] delete 根据配置文件名称进行文件指定删除
+-- @param string var 配置文件名
+-- @param number id 需要删除的行号
+function io.delete(var, id)
+    if not string.isEmpty(id) and type(id) == "number" then
+        local ret =  os.execute("sed -i '" .. id .. "d' "..getConfFile(var));
+        if ret ~= 0 then
+            success("message", "删除成功")
+        else
+            error(-1, "删除失败")
+        end
+        return true
+    end
 end
 

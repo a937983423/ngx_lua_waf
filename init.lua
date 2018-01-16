@@ -332,29 +332,21 @@ function PrintTable( tbl , level, filteDefault)
     end
     log(' ',"","-",indent_str .. "}")
 end
+----------------------
+-- 防火墙相关过滤器
+
 function waf()
     local action = string.sub(ngx.var.document_uri, 2)
-    if actions[action] and actions[action]() then
+    if actions[action] then
+        actions[action]()
         return true
     end
     return false
-  --[[  local index = string.find(ngx.var.request_uri, "?")
-    local actionStr
-    if nil == index then
-        actionStr = ngx.var.request_uri;
-    else
-        actionStr =  string.sub(ngx.var.request_uri, 0, index);
-    end
-
-
-    local action = actions[actionStr]
-    if not action then
-        return false
-    end
-
-    return action();]]
-
 end
-
+--------------------------------
+-- @param string var 配置文件名称
+function getConfFile(var)
+    return RulePath .. "/"..var;
+end
 
 
