@@ -45,14 +45,22 @@ function log(method,url,data,ruletag)
 end
 ------------------------------------规则读取函数-------------------------------------------------------------------
 
+rules = {
+    args_rules = read_rule('args'),
+    cookie_rules = read_rule('cookie'),
+    post_rules = read_rule('post'),
+    url_rules = read_rule('url'),
+    users_rules = read_rule('user'),
+    user_agent_rules = read_rule('user_agent'),
+    whiteurl_rules = read_rule('whiteurl')
+}
 
-urlrules=read_rule('url')
-argsrules=read_rule('args')
-uarules=read_rule('user-agent')
-wturlrules=read_rule('whiteurl')
-postrules=read_rule('post')
-ckrules=read_rule('cookie')
-users=read_rule('user')
+
+
+
+
+
+
 
 
 function say_html(text)
@@ -110,7 +118,7 @@ end
 function whiteurl()
     if WhiteCheck then
         if wturlrules ~=nil then
-            for _,rule in pairs(wturlrules) do
+            for _,rule in pairs(rules.whiteurl_rules) do
                 if ngxmatch(ngx.var.uri,rule,"isjo") then
                     return true
                 end
@@ -134,7 +142,7 @@ function fileExtCheck(ext)
 end
 
 function args()
-    for _,rule in pairs(argsrules) do
+    for _,rule in pairs(rules.args_rules) do
         local args = ngx.req.get_uri_args()
         for key, val in pairs(args) do
             if type(val)=='table' then
@@ -162,7 +170,7 @@ end
 
 function url()
     if UrlDeny then
-        for _,rule in pairs(urlrules) do
+        for _,rule in pairs(rules.url_rules) do
             local flag, err = ngxmatch(ngx.var.request_uri,rule,"isjo");
             if rule ~="" and flag then
                 log('GET',ngx.var.request_uri,"-",rule)
@@ -177,7 +185,8 @@ end
 function ua()
     local ua = ngx.var.http_user_agent
     if ua ~= nil then
-        for _,rule in pairs(uarules) do
+
+        for _,rule in pairs(rules["user_agent_rules"]) do
             if rule ~="" and ngxmatch(ua,rule,"isjo") then
                 log('UA',ngx.var.request_uri,"-",rule)
                 say_html()
@@ -188,7 +197,7 @@ function ua()
     return false
 end
 function body(data)
-    for _,rule in pairs(postrules) do
+    for _,rule in pairs(rules.post_rules) do
         if rule ~="" and data~="" and ngxmatch(unescape(data),rule,"isjo") then
             log('POST',ngx.var.request_uri,data,rule)
             say_html()
@@ -200,7 +209,7 @@ end
 function cookie()
     local ck = ngx.var.http_cookie
     if CookieCheck and ck then
-        for _,rule in pairs(ckrules) do
+        for _,rule in pairs(rules.cookie_rules) do
             if rule ~="" and ngxmatch(ck,rule,"isjo") then
                 log('Cookie',ngx.var.request_uri,"-",rule)
                 say_html()

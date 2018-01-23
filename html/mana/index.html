@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<title></title>
+<link rel="stylesheet" href="/css/layui/css/layui.css">
+<style type="text/css">
+.main-content {
+	padding: 15px;
+}
+</style>
+</head>
+<body>
+	<div class="layui-layout layui-layout-admin">
+		<div class="layui-header">
+			<div class="layui-logo">WAF Mana</div>
+			<ul class="layui-nav layui-layout-right">
+				<li class="layui-nav-item"><a href="javascript:;"
+					class="logout"></a></li>
+			</ul>
+		</div>
+
+		<div class="layui-side layui-bg-black">
+			<div class="layui-side-scroll"></div>
+		</div>
+
+		<div class="layui-body"></div>
+
+		<div class="layui-footer"></div>
+	</div>
+    <script src="/js/jquery.min.js" type="text/javascript"></script>
+	<script src="/js/jquery.i18n.properties.min.js" type="text/javascript"></script>
+	<script src="/js/template/template.js"></script>
+    <script id="menu-tpl" type="text/html">
+        <ul class="layui-nav layui-nav-tree">
+            <li class="layui-nav-item layui-nav-itemed"><a class="waf-list"
+                                                           href="javascript:;"></a>
+                <dl class="layui-nav-child">
+                    <dd class="layui-this">
+                        <a href="javascript:load_page('rule/list.html?a='+ new Date().getSeconds())" class="menu-rule-sub"></a>
+                    </dd>
+                    <dd>
+                        <a href="javascript: load_page('rule/edit.html?a='+new Date().getSeconds());" class="rule-add"></a>
+                    </dd>
+                </dl>
+            </li>
+            <li class="layui-nav-item layui-nav-itemed">
+                <a class="user-list" href="javascript:;"></a>
+                <dl class="layui-nav-child">
+                    <%for(var i = 0; i < list.length; i++) {%>
+                    <dd>
+                        <a href="javascript:;" class="menu-item" path="<%:=list[i].path%>" data-index="<%:=i%>"><%:=list[i].name%></a>
+                    </dd>
+                    <%}%>
+                </dl>
+            </li>
+            <li class="layui-nav-item layui-nav-itemed"><a class="statistics"
+                                                           href="javascript:load_page('html/statistics/list.html');"></a>
+            </li>
+        </ul>
+    </script>
+	<script>
+        window.clientList = [];
+
+        function api_invoke(uri, params, callback) {
+
+            $.ajax({
+                url : uri,
+                data : JSON.stringify(params),
+                type : 'POST',
+                cache : false,
+                dataType : 'json',
+                contentType : "application/json; charset=utf-8",
+                success : function(data) {
+                    callback(data);
+                },
+                error : function(XMLHttpRequest, textStatus, errorThrown) {
+
+                }
+            });
+        }
+        function apiAjax(uri, params, callback) {
+            $.ajax({
+                url : uri,
+                data : params,
+                type : 'POST',
+                cache : false,
+                dataType : 'json',
+                success : function(data) {
+                    callback(data);
+                },
+                error : function(XMLHttpRequest, textStatus, errorThrown) {
+
+                }
+            });
+        }
+        function load_page(pageUrl, flag) {
+            if (!flag){
+                console.log(flag)
+                rest();
+            }
+            $(".layui-body").load(pageUrl);
+        }
+
+        $(function() {
+            if (window.history && window.history.pushState) {
+                $(window).on('popstate', function() {
+                    window.history.pushState('forward', null, '#');
+                    window.history.forward(1);
+                });
+            }
+            if ('pushState' in history) {
+                window.history.pushState('forward', null, '#');
+                window.history.forward(1);
+            } else {
+                History.pushState('forward', null, '?state=2');
+                window.history.forward(1);
+            }
+            window.onhashchange = function() {
+                History.pushState('forward', null, '?state=1');
+            }
+
+            $(".logout").click(function() {
+               location.href = "/";
+            });
+
+            $('.layui-nav-child dd').click(function () {
+
+                $('.layui-nav-child dd').removeClass("layui-this");
+                $(this).addClass("layui-this");
+
+            })
+
+        });
+        function update_menu() {
+            clientList = [{"name":"用户管理","path":"user/list.html"}];
+            var html = template($("#menu-tpl").html(), {
+                list : clientList
+            });
+
+            $(".layui-side-scroll").html(html);
+
+            $(".waf-list").html($.i18n.prop('menu.waf.list'));
+            $(".menu-rule-sub").html($.i18n.prop('menu.rule.list'));
+            $(".rule-add").html($.i18n.prop('menu.rule.add'));
+            $(".user-list").html($.i18n.prop('menu.user.list'));
+            $(".statistics").html($.i18n.prop('menu.client.statistics'));
+            $(".menu-item").click(function() {
+                window.clientIndex = $(this).attr("data-index");
+                load_page( $(this).attr("path"));
+            });
+
+        }
+        
+
+        var i18nLanguage = "en";
+        var webLanguage = [ 'zh-CN', 'en' ];
+
+        function initWebLanguage() {
+            var navLanguage = navigator.language;
+            if (navLanguage) {
+                var charSize = $.inArray(navLanguage, webLanguage);
+                if (charSize > -1) {
+                    i18nLanguage = navLanguage;
+                }
+            }
+        }
+
+        initWebLanguage();
+
+        jQuery.i18n.properties({
+            name : 'lang', //资源文件名称
+            path : '/i18n/', //资源文件路径
+            mode : 'map', //用Map的方式使用资源文件中的值
+            language : i18nLanguage,
+            encoding: 'UTF-8',
+            callback : function() {//加载成功后设置显示内容
+                $('title').html($.i18n.prop('title'));
+                $(".layui-footer").html($.i18n.prop('title'));
+                $(".logout").html($.i18n.prop('logout'));
+                update_menu();
+            }
+        });
+        function rest() {
+            window.ruleIndex = null;
+        }
+    </script>
+
+</body>
+</html>

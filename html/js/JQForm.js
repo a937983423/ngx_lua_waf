@@ -8,7 +8,6 @@
         globalOptions  = $.extend({},{
             url: that.attr("action"),
             method: that.attr("method"),
-            data: that.serialize(),
             dataType: 'json',
             async: true,
             success: function (data) {
@@ -23,7 +22,7 @@
 
     var submit = function (that) {
         that.submit(function() { // 提交时验证
-            $.ajax(globalOptions);
+            $.ajax($.extend({}, globalOptions,{ data: that.serialize()}));
             return false;
         })
     }

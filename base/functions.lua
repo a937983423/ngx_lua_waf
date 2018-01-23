@@ -1709,12 +1709,22 @@ end
 --------------------------------
 -- 判断字符串是否为nil 或者空串
 -- @function [parent=#string] isEmpty
--- @param string str 数值
+-- @param string str 字符对象
 -- @return boolean#boolean  校验结果
 
 function string.isEmpty(str)
     return str == nil or "" == str;
 
+end
+
+--------------------------------
+-- 判断字符串是否包含另一个字符串
+-- @function [parent=#string] contains 包含搜搜
+-- @param string str 原字符串
+-- @param string search 需要搜索的字符串
+-- @return boolean#boolean  搜索结果
+function string.contains(str, search)
+    return string.match(str, search) == search
 end
 -----------------------
 -- @function read_rule 读取规则放置table中
@@ -1747,7 +1757,7 @@ end
 function success(key, content)
     local data = {}
     data["code"]=0
-    data["key"]=content
+    data[key]=content
 
     say_json(data)
 end
@@ -1769,20 +1779,25 @@ end
 -- @function  [parent=#io] save 根据配置文件名称进行内容保存
 -- @param string var 配置文件名
 -- @param string content 需要保存的数据
+function io.add(var, content)
+    return write(file, "\r\n" .. content)
+end
+
+
+------------------------------------
+-- 更新事件
+-- @function  [parent=#io] save 根据配置文件名称进行内容保存
+-- @param string var 配置文件名
+-- @param string content 需要保存的数据
 -- @param number id 数据对应的行号
-function io.save(var, content, id)
-    if string.isEmpty(id) then
-        return write(file, "\r\n" .. content)
-    end
-    if type(id) == "number" then
-        if os.execute("sed -i '" .. id .. "a\\" .. content .. "' " .. getConfFile(var)) ~= 0 then
-            os.execute("sed -i '" .. id .. "d' " .. getConfFile(var));
-            success("message", "保存成功")
-        end
-        error(-1, "保存失败")
-    end
+function io.update(var, content, id)
+    local dir = getConfFile(var)
+    os.execute("sed -i '" .. id .. "a\\" .. content .. "' " .. dir)
+    os.execute("sed -i '" .. id .. "d' " .. dir);
     return true
 end
+
+
 
 ------------------------------------
 -- 保存事件
@@ -1790,14 +1805,7 @@ end
 -- @param string var 配置文件名
 -- @param number id 需要删除的行号
 function io.delete(var, id)
-    if not string.isEmpty(id) and type(id) == "number" then
-        local ret =  os.execute("sed -i '" .. id .. "d' "..getConfFile(var));
-        if ret ~= 0 then
-            success("message", "删除成功")
-        else
-            error(-1, "删除失败")
-        end
-        return true
-    end
+    local ret=  os.execute("sed -i '" .. id .. "d' "..getConfFile(var));
+    return true;
 end
 
