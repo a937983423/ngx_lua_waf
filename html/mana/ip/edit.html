@@ -4,20 +4,16 @@
     </ul>
     <div class="main-content">
       <div class="layui-form-item">
-	    <label class="layui-form-label rule-type"></label>
+	    <label class="layui-form-label ip-type"></label>
 	    <div class="layui-input-inline">
             <select name="type" readonly="readonly" class="layui-input">
-                <option value="args_rules">args_rules</option>
-                <option value="cookie_rules">cookie_rules</option>
-                <option value="post_rules">post_rules</option>
-                <option value="url_rules">url_rules</option>
-                <option value="user_agent_rules">user_agent_rules</option>
-                <option value="whiteurl_rules">whiteurl_rules</option>
+                <option value="ipWhitelist">ip白名单</option>
+                <option value="ipBlocklist">ip黑名单</option>
             </select>
 	    </div>
 	  </div>
 	  <div class="layui-form-item">
-        <label class="layui-form-label rule-value"></label>
+        <label class="layui-form-label ip-value"></label>
         <div class="layui-input-inline">
           <input type="text" name="value" autocomplete="off" placeholder="" class="layui-input">
         </div>
@@ -32,18 +28,18 @@
     </div>
 </div>
 <script>
-if(window.ruleIndex){
+if(window.ipIndex){
     $(".rule-title").html($.i18n.prop('rule.edit'));
     $(".back").html($.i18n.prop('public.back'));
-    $("[name='type']").val(ruleList[ruleIndex].type);
-    $("input[name='value']").val(ruleList[ruleIndex].value);
+    $("[name='type']").val(ipList[ipIndex].type);
+    $("input[name='value']").val(ipList[ipIndex].value);
 }else {
     $(".rule-title").html($.i18n.prop('rule.add'));
     $(".back").hide();
 }
-$(".rule-value").html($.i18n.prop('rule.value'));
-$(".rule-type").html($.i18n.prop('rule.type'));
-$("input[name='value']").attr("placeholder", $.i18n.prop('rule.value.placeholder'));
+$(".ip-value").html($.i18n.prop('ip.value'));
+$(".ip-type").html($.i18n.prop('ip.type'));
+$("input[name='value']").attr("placeholder", $.i18n.prop('ip.value.placeholder'));
 $(".save").html($.i18n.prop('public.submit'));
 
 
@@ -52,9 +48,9 @@ $(".save").html($.i18n.prop('public.submit'));
 
 $(".save").click(function(){
     var data = {};
-    if(window.ruleIndex){
-        ruleList[ruleIndex]['value'] = $("input[name='value']").val();
-        data = ruleList[ruleIndex];
+    if(window.ipIndex){
+        ipList[ipIndex]['value'] = $("input[name='value']").val();
+        data = ipList[ipIndex];
     }else {
         data['value']  = $("input[name='value']").val();
         data['type']  = $("[name='type']").val();
@@ -67,8 +63,8 @@ $(".save").click(function(){
 });
 
 $(".back").click(function(){
-    window.ruleIndex = null;
-	load_page("rule/list.html",true);
+    window.ipIndex = null;
+	load_page("ip/list.html",true);
 });
 
 

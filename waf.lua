@@ -3,8 +3,6 @@ local method=ngx.req.get_method()
 local ngxmatch=ngx.re.match
 if waf() then
 elseif whiteip() then
---elseif is_waf() then
-elseif upgrade() then
 elseif blockip() then
 elseif denycc() then
 elseif ngx.var.http_Acunetix_Aspect then

@@ -1,0 +1,61 @@
+<div class="layui-tab layui-tab-brief">
+    <ul class="layui-tab-title site-demo-title">
+        <li class="layui-this rule-title"></li>
+    </ul>
+    <div class="main-content">
+        <div class="layui-form-item">
+            <label class="layui-form-label user-name"></label>
+            <div class="layui-input-inline">
+                <input name="name"  class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label user-pwd"></label>
+            <div class="layui-input-inline">
+                <input type="text" name="pwd" autocomplete="off" placeholder="" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn save"></button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+
+    apiAjax("/get_users", {}, function(data) {
+        if (data.code == 0) {
+            var user = data.data[0].split("\|")
+            $("input[name='name']").val(user[0]);
+            $("input[name='pwd']").val(user[1]);
+        }
+    });
+
+
+    $(".user-name").html($.i18n.prop('user.name'));
+    $(".user-pwd").html($.i18n.prop('user.pwd'));
+    $("input[name='value']").attr("placeholder",$.i18n.prop('user.name'));
+    $(".save").html($.i18n.prop('public.submit'));
+
+
+
+
+
+    $(".save").click(function(){
+        ruleList[ruleIndex]['value'] = $("input[name='value']").val();
+        apiAjax("/"+ruleList[ruleIndex]['type'], ruleList[ruleIndex], function(data) {
+            if (data.code == 0) {
+                alert("保存成功")
+            }
+        });
+    });
+
+    $(".back").click(function(){
+        window.ruleIndex = null;
+        load_page("rule/list.html",true);
+    });
+
+
+
+</script>

@@ -47,17 +47,19 @@ end
 
 rules = {
     args_rules = read_rule('args'),
+    black_fileExt_rules = read_rule('black_fileExt'),
     cookie_rules = read_rule('cookie'),
     post_rules = read_rule('post'),
     url_rules = read_rule('url'),
-    users_rules = read_rule('user'),
     user_agent_rules = read_rule('user_agent'),
     whiteurl_rules = read_rule('whiteurl')
 }
+users = read_rule('user')
 
-
-
-
+ips = {
+    ipWhitelist=read_rule("ipWhitelist"),
+    ipBlocklist=read_rule("ipBlocklist")
+}
 
 
 
@@ -128,7 +130,7 @@ function whiteurl()
     return false
 end
 function fileExtCheck(ext)
-    local items = Set(black_fileExt)
+    local items = Set(rules.black_fileExt_rules)
     ext=string.lower(ext)
     if ext then
         for rule in pairs(items) do
@@ -261,8 +263,8 @@ function get_boundary()
 end
 
 function whiteip()
-    if next(ipWhitelist) ~= nil then
-        for _,ip in pairs(ipWhitelist) do
+    if next(ips.ipWhitelist) ~= nil then
+        for _,ip in pairs(ips.ipWhitelist) do
             if getClientIp()==ip then
                 return true
             end
@@ -272,8 +274,8 @@ function whiteip()
 end
 
 function blockip()
-    if next(ipBlocklist) ~= nil then
-        for _,ip in pairs(ipBlocklist) do
+    if next(ips.ipBlocklist) ~= nil then
+        for _,ip in pairs(ips.ipBlocklist) do
             if getClientIp()==ip then
                 ngx.exit(403)
                 return true
@@ -286,28 +288,8 @@ end
 
 
 
-function upgrade()
-    --[[say_html(ngx.var.request_uri)
-    return true
---]]
-    if ngx.var.request_uri == "/isUpgrade=true" then
-        isUpgrade = true;
-    elseif ngx.var.request_uri == "/isUpgrade=false" then
-        isUpgrade = false;
-        say_html("Set up the success ")
-        return true
-    end
-    local receive_headers = ngx.req.get_headers()
-    local host_ = receive_headers["Host"]
-    if ("zzs.huodull.com" == host_ ) and isUpgrade then
-        say_upgrade()
-        return true
 
-    end
-    return false
-
-end
----
+--[[---
 -- @function: 打印table的内容，递归
 -- @param: tbl 要打印的table
 -- @param: level 递归的层数，默认不用传值进来
@@ -340,11 +322,12 @@ function PrintTable( tbl , level, filteDefault)
         end
     end
     log(' ',"","-",indent_str .. "}")
-end
+end]]
 ----------------------
 -- 防火墙相关过滤器
 
 function waf()
+
     local action = string.sub(ngx.var.document_uri, 2)
     if actions[action] then
         actions[action]()

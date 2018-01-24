@@ -47,7 +47,7 @@
                 </dl>
             </li>
             <li class="layui-nav-item layui-nav-itemed">
-                <a class="user-list" href="javascript:;"></a>
+                <a class="config-list" href="javascript:;"></a>
                 <dl class="layui-nav-child">
                     <%for(var i = 0; i < list.length; i++) {%>
                     <dd>
@@ -55,9 +55,6 @@
                     </dd>
                     <%}%>
                 </dl>
-            </li>
-            <li class="layui-nav-item layui-nav-itemed"><a class="statistics"
-                                                           href="javascript:load_page('html/statistics/list.html');"></a>
             </li>
         </ul>
     </script>
@@ -98,7 +95,6 @@
         }
         function load_page(pageUrl, flag) {
             if (!flag){
-                console.log(flag)
                 rest();
             }
             $(".layui-body").load(pageUrl);
@@ -125,9 +121,8 @@
             $(".logout").click(function() {
                location.href = "/";
             });
-
+            update_menu();
             $('.layui-nav-child dd').click(function () {
-
                 $('.layui-nav-child dd').removeClass("layui-this");
                 $(this).addClass("layui-this");
 
@@ -135,22 +130,29 @@
 
         });
         function update_menu() {
-            clientList = [{"name":"用户管理","path":"user/list.html"}];
-            var html = template($("#menu-tpl").html(), {
-                list : clientList
+            $.ajax({
+                url : "/mana/menu.json",
+                type : 'GET',
+                dataType : 'json',
+                async: false,
+                success : function(data) {
+                    clientList = data;
+                    var html = template($("#menu-tpl").html(), {
+                        list : clientList
+                    });
+                    $(".layui-side-scroll").html(html);
+                    $(".waf-list").html($.i18n.prop('menu.waf.list'));
+                    $(".menu-rule-sub").html($.i18n.prop('menu.rule.list'));
+                    $(".rule-add").html($.i18n.prop('menu.rule.add'));
+                    $(".config-list").html($.i18n.prop('menu.config.list'));
+                    $(".menu-item").click(function() {
+                        window.clientIndex = $(this).attr("data-index");
+                        load_page( $(this).attr("path"));
+                    });
+                }
             });
 
-            $(".layui-side-scroll").html(html);
 
-            $(".waf-list").html($.i18n.prop('menu.waf.list'));
-            $(".menu-rule-sub").html($.i18n.prop('menu.rule.list'));
-            $(".rule-add").html($.i18n.prop('menu.rule.add'));
-            $(".user-list").html($.i18n.prop('menu.user.list'));
-            $(".statistics").html($.i18n.prop('menu.client.statistics'));
-            $(".menu-item").click(function() {
-                window.clientIndex = $(this).attr("data-index");
-                load_page( $(this).attr("path"));
-            });
 
         }
         
@@ -180,11 +182,12 @@
                 $('title').html($.i18n.prop('title'));
                 $(".layui-footer").html($.i18n.prop('title'));
                 $(".logout").html($.i18n.prop('logout'));
-                update_menu();
+
             }
         });
         function rest() {
             window.ruleIndex = null;
+            window.ipIndex = null;
         }
     </script>
 

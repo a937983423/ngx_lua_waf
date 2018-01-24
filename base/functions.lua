@@ -1780,7 +1780,9 @@ end
 -- @param string var 配置文件名
 -- @param string content 需要保存的数据
 function io.add(var, content)
-    return write(file, "\r\n" .. content)
+    local dir = getConfFile(var)
+    os.execute("sed -i '$a\\" .. content .. "' " .. dir)
+    return true
 end
 
 

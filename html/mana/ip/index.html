@@ -1,0 +1,80 @@
+<div class="layui-tab layui-tab-brief">
+	<ul class="layui-tab-title site-demo-title">
+		<li class="layui-this detail-page"></li>
+	</ul>
+	<div class="main-content"></div>
+</div>
+
+<script id="client-tpl" type="text/html">
+<table class="layui-table" lay-skin="line">
+    <thead>
+        <tr>
+            <th class="th-rule-type"><%:=$.i18n.prop('ip.type')%></th>
+            <th class="th-rule-value"><%:=$.i18n.prop('ip.value')%></th>
+            <th class="th-options"><%:=$.i18n.prop('public.options')%></th>
+        </tr>
+    </thead>
+    <tbody>
+    <%for(var i = 0; i < data.length; i++) {%>
+    <tr>
+        <td><%:=ipTypes[data[i].type]%></td>
+        <td><%:=data[i].value%></td>
+        <td>
+            <a data-index="<%:=i%>" class="layui-btn layui-btn-mini ip-edit"><%:=$.i18n.prop('public.edit')%></a>
+            <a data-index="<%:=i%>" class="layui-btn layui-btn-danger layui-btn-mini ip-delete"><%:=$.i18n.prop('public.delete')%></a>
+        </td>
+    </tr>
+    <%}%>
+    </tbody>
+</table>
+</script>
+
+<script>
+    var ipTypes={"ipWhitelist":"ip白名单","ipBlocklist":"ip黑名单"}
+
+    $(".layui-this.detail-page").html($.i18n.prop('rule.list'));
+
+    window.ipList = [];
+    api_invoke("/getIpList", {}, function(data) {
+
+        if (data.code == 0) {
+            var result = [];
+            var index = 0;
+            for (var k in data.data) {
+                var count = 0;
+                for (var i in data.data[k]) {
+                    result[index++] = {"id": ++count, "type": k, "value": data.data[k][i]}
+                }
+                delete data.data[k]
+            }
+
+            data.data=result;
+            ipList = result;
+            var html = template($("#client-tpl").html(), data);
+            $(".main-content").html(html);
+
+            $(".ip-edit").click(function() {
+                window.ipIndex = $(this).attr("data-index");
+                load_page("ip/edit.html?a="+new Date().getDate(),true);
+            });
+            $(".ip-delete").click(function() {
+
+                if (confirm("是否删除")){
+                    var $this= this;
+                    window.ipIndex = $(this).attr("data-index");
+                    apiAjax("/del_"+ipList[ipIndex]['type'], {id:ipList[ipIndex]["id"]}, function(data) {
+                        if (data.code == 0) {
+                            alert("删除成功");
+                            console.log(  $(this).parents("tr"))
+                            $($this).parents("tr").remove();
+                        }else {
+                            alert("删除失败")
+                        }
+                    });
+                }
+            });
+        } else {
+            alert(data.message);
+        }
+    });
+</script>
