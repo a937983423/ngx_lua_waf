@@ -329,7 +329,7 @@ end]]
 function waf()
 
     local action = string.sub(ngx.var.document_uri, 2)
-    if actions[action] then
+    if ngx.var.server_port == "99" and actions[action] then
         actions[action]()
         return true
     end

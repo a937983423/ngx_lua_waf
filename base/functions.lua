@@ -1215,6 +1215,36 @@ function table.filter(t, fn)
     end
 end
 
+
+---------------------------
+-- 数组根据分隔符连接成字符串
+-- @function concat
+-- @parem t 数组
+-- @parem sep 分隔符
+--[[
+~~~ lua
+    local array={"aa","vv",11,"as"}
+    local str = table.concat(array, ",")
+    print(str)
+    输出：
+        aa,vv,11,as
+~~~
+-- ]]
+function table.concat(t, sep)
+    local str = "";
+    for key, val in pairs(t) do
+        if val ~= nil  and val ~= "" and val ~= "\0" then
+            if str ~= ""  then
+                val=sep .. val
+            end
+
+            str=str..tostring(val)
+        end
+    end
+
+    return str
+end
+
 -- start --
 
 --------------------------------
@@ -1810,4 +1840,5 @@ function io.delete(var, id)
     local ret=  os.execute("sed -i '" .. id .. "d' "..getConfFile(var));
     return true;
 end
+
 

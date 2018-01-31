@@ -301,8 +301,8 @@ function action:save(var, item, items)
     end
     if string.isEmpty(id) then
         if io.add(var, value) then
+            table.insert(item, value)
             success("message", "添加成功")
-            table.insert(item, items)
             return true;
         end
         error(100102, "添加失败")
@@ -311,7 +311,6 @@ function action:save(var, item, items)
         if type(i) == "number" and io.update(var, value, id) then
             item[i] = value
             success("message", "更新成功")
-
             return true;
         end
         error(100103, "更新失败")
