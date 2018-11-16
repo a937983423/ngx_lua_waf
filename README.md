@@ -4,7 +4,7 @@
 
 对于本项目的安装教程:[Nginx WAF 防护功能实战](http://www.egzosn.com/article/index.html?type=newest&id=20161031224507&file=html&title=Nginx%2520WAF%2520%25E9%2598%25B2%25E6%258A%25A4%25E5%258A%259F%25E8%2583%25BD%25E5%25AE%259E%25E6%2588%2598&createTime=2016-10-31)
 
-#### 可视化使用教程
+#### 可视化配置使用教程
 
 1. 安装成功之后，http://ip:99/  输入账号密码进行登录，默认账号密码为egan,如需修改请修改/ngx_lua_waf/wafconf/user文件。
 
@@ -22,6 +22,8 @@ function waf()
     return false
 end
 ```
+
+---
 
 
 ### 用途：
