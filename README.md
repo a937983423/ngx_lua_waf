@@ -1,12 +1,30 @@
 ##ngx_lua_waf
 
-ngx_lua_waf是我刚入职趣游时候开发的一个基于ngx_lua的web应用防火墙。
+本项目修改于https://github.com/loveshell/ngx_lua_waf
 
-代码很简单，开发初衷主要是使用简单，高性能和轻量级。
+对于本项目的安装教程:[Nginx WAF 防护功能实战](http://www.egzosn.com/article/index.html?type=newest&id=20161031224507&file=html&title=Nginx%2520WAF%2520%25E9%2598%25B2%25E6%258A%25A4%25E5%258A%259F%25E8%2583%25BD%25E5%25AE%259E%25E6%2588%2598&createTime=2016-10-31)
 
-现在开源出来，遵从MIT许可协议。其中包含我们的过滤规则。如果大家有什么建议和想fa，欢迎和我一起完善。
+#### 可视化使用教程
 
-###用途：
+1. 安装成功之后，http://ip:99/  输入账号密码进行登录，默认账号密码为egan,如需修改请修改/ngx_lua_waf/wafconf/user文件。
+
+2. 这里访问地址是强制是ip:99的方式，如需修改成域名的形式，找到 ngx_lua_waf/init.lua文件 waf()方法 第332行进行修改，修改成以下的样子
+
+```
+function waf()
+
+    local action = string.sub(ngx.var.document_uri, 2)
+   -- if ngx.var.server_port == "99" and actions[action] then
+      if ngx.var.server_name == "waf.egzosn.com" and actions[action] then
+        actions[action]()
+        return true
+    end
+    return false
+end
+```
+
+
+### 用途：
     	
 	防止sql注入，本地包含，部分溢出，fuzzing测试，xss,SSRF等web攻击
 	防止svn/备份之类文件泄漏
@@ -116,23 +134,3 @@ nginx安装路径假设为:/usr/local/nginx/conf/
 	默认开启了get和post过滤，需要开启cookie过滤的，编辑waf.lua取消部分--注释即可
 	
 	日志文件名称格式如下:虚拟主机名_sec.log
-
-
-## Copyright
-
-<table>
-  <tr>
-    <td>Weibo</td><td>神奇的魔法师</td>
-  </tr>
-  <tr>
-    <td>Forum</td><td>http://bbs.linuxtone.org/</td>
-  </tr>
-  <tr>
-    <td>Copyright</td><td>Copyright (c) 2013- loveshell</td>
-  </tr>
-  <tr>
-    <td>License</td><td>MIT License</td>
-  </tr>
-</table>
-	
-感谢ngx_lua模块的开发者[@agentzh](https://github.com/agentzh/),春哥是我所接触过开源精神最好的人
